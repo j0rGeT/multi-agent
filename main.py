@@ -10,6 +10,7 @@ from core.ticket_router import TicketRouter
 from core.config import ConfigManager
 from core.agent_monitor import AgentMonitor
 from core.chain_processor import ChainProcessor
+from mcp.mcp_manager import MCPManager
 
 
 class MultiAgentSystem:
@@ -27,6 +28,9 @@ class MultiAgentSystem:
 
         # 初始化链式处理器
         self.chain_processor = ChainProcessor()
+
+        # 初始化MCP管理器
+        self.mcp_manager = MCPManager()
 
         # 检查必要的环境变量
         if not os.getenv("OPENAI_API_KEY"):

@@ -26,6 +26,27 @@ class ChainProcessor:
         self.chains[chain_name] = agent_names
         print(f"🔗 创建处理链 '{chain_name}': {' -> '.join(agent_names)}")
 
+    def delete_chain(self, chain_name: str):
+        """删除处理链"""
+        if chain_name in self.chains:
+            del self.chains[chain_name]
+            print(f"🗑️  删除处理链 '{chain_name}'")
+        else:
+            raise ValueError(f"处理链 '{chain_name}' 不存在")
+
+    def update_chain(self, chain_name: str, new_agent_names: List[str]):
+        """更新处理链"""
+        if chain_name not in self.chains:
+            raise ValueError(f"处理链 '{chain_name}' 不存在")
+
+        # 验证所有智能体都存在
+        for agent_name in new_agent_names:
+            if agent_name not in self.registered_agents:
+                raise ValueError(f"智能体 '{agent_name}' 未注册")
+
+        self.chains[chain_name] = new_agent_names
+        print(f"🔄 更新处理链 '{chain_name}': {' -> '.join(new_agent_names)}")
+
     def get_chain(self, chain_name: str) -> Optional[List[str]]:
         """获取处理链"""
         return self.chains.get(chain_name)

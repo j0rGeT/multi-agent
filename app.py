@@ -244,5 +244,294 @@ def api_execute_tool():
             'error': str(e)
         })
 
+
+# 处理链管理API端点
+@app.route('/api/chains/create', methods=['POST'])
+def api_create_chain():
+    """创建处理链"""
+    try:
+        data = request.get_json()
+        chain_name = data.get('chain_name')
+        agent_list = data.get('agents', [])
+
+        if not chain_name or not agent_list:
+            return jsonify({
+                'success': False,
+                'error': '缺少必要参数: chain_name, agents'
+            })
+
+        system = get_agent_system()
+
+        # 验证智能体是否存在
+        available_agents = system.router.list_available_agents()
+        available_agent_names = [agent["name"] for agent in available_agents]
+
+        for agent_name in agent_list:
+            if agent_name not in available_agent_names:
+                return jsonify({
+                    'success': False,
+                    'error': f'智能体 {agent_name} 不存在'
+                })
+
+        # 创建处理链
+        system.chain_processor.create_chain(chain_name, agent_list)
+
+        return jsonify({
+            'success': True,
+            'message': f'处理链 {chain_name} 创建成功'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@app.route('/api/chains/<chain_name>', methods=['DELETE'])
+def api_delete_chain(chain_name):
+    """删除处理链"""
+    try:
+        system = get_agent_system()
+
+        # 检查处理链是否存在
+        chains = system.chain_processor.list_chains()
+        chain_exists = any(chain['name'] == chain_name for chain in chains)
+
+        if not chain_exists:
+            return jsonify({
+                'success': False,
+                'error': f'处理链 {chain_name} 不存在'
+            })
+
+        # 删除处理链
+        system.chain_processor.delete_chain(chain_name)
+
+        return jsonify({
+            'success': True,
+            'message': f'处理链 {chain_name} 已删除'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@app.route('/api/chains/<chain_name>/update', methods=['PUT'])
+def api_update_chain(chain_name):
+    """更新处理链"""
+    try:
+        data = request.get_json()
+        new_agent_list = data.get('agents', [])
+
+        if not new_agent_list:
+            return jsonify({
+                'success': False,
+                'error': '缺少必要参数: agents'
+            })
+
+        system = get_agent_system()
+
+        # 验证智能体是否存在
+        available_agents = system.router.list_available_agents()
+        available_agent_names = [agent["name"] for agent in available_agents]
+
+        for agent_name in new_agent_list:
+            if agent_name not in available_agent_names:
+                return jsonify({
+                    'success': False,
+                    'error': f'智能体 {agent_name} 不存在'
+                })
+
+        # 更新处理链
+        system.chain_processor.update_chain(chain_name, new_agent_list)
+
+        return jsonify({
+            'success': True,
+            'message': f'处理链 {chain_name} 更新成功'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+
+# MCP相关API端点
+@app.route('/api/mcp/clients')
+def api_mcp_clients():
+    """获取MCP客户端列表"""
+    try:
+        system = get_agent_system()
+        clients_status = system.mcp_manager.get_all_clients_status()
+
+        return jsonify({
+            'success': True,
+            'data': clients_status
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@app.route('/api/mcp/clients', methods=['POST'])
+def api_add_mcp_client():
+    """添加MCP客户端"""
+    try:
+        data = request.get_json()
+        client_name = data.get('name')
+        server_url = data.get('server_url')
+
+        if not all([client_name, server_url]):
+            return jsonify({
+                'success': False,
+                'error': '缺少必要参数: name, server_url'
+            })
+
+        system = get_agent_system()
+
+        # 由于MCP客户端连接是异步的，这里需要异步执行
+        import asyncio
+        success = asyncio.run(system.mcp_manager.add_client(client_name, server_url))
+
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'MCP客户端 {client_name} 已添加'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'添加MCP客户端 {client_name} 失败'
+            })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@app.route('/api/mcp/clients/<client_name>', methods=['DELETE'])
+def api_remove_mcp_client(client_name):
+    """移除MCP客户端"""
+    try:
+        system = get_agent_system()
+
+        # 异步执行
+        import asyncio
+        asyncio.run(system.mcp_manager.remove_client(client_name))
+
+        return jsonify({
+            'success': True,
+            'message': f'MCP客户端 {client_name} 已移除'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@app.route('/api/mcp/clients/<client_name>/tools')
+def api_mcp_client_tools(client_name):
+    """获取MCP客户端工具列表"""
+    try:
+        system = get_agent_system()
+        tools = system.mcp_manager.get_client_tools(client_name)
+
+        return jsonify({
+            'success': True,
+            'data': tools
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@app.route('/api/mcp/clients/<client_name>/resources')
+def api_mcp_client_resources(client_name):
+    """获取MCP客户端资源列表"""
+    try:
+        system = get_agent_system()
+        resources = system.mcp_manager.get_client_resources(client_name)
+
+        return jsonify({
+            'success': True,
+            'data': resources
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@app.route('/api/mcp/tools/execute', methods=['POST'])
+def api_mcp_execute_tool():
+    """执行MCP工具"""
+    try:
+        data = request.get_json()
+        client_name = data.get('client_name')
+        tool_name = data.get('tool_name')
+        arguments = data.get('arguments', {})
+
+        if not all([client_name, tool_name]):
+            return jsonify({
+                'success': False,
+                'error': '缺少必要参数: client_name, tool_name'
+            })
+
+        system = get_agent_system()
+
+        # 异步执行
+        import asyncio
+        result = asyncio.run(system.mcp_manager.call_tool(client_name, tool_name, arguments))
+
+        return jsonify({
+            'success': True,
+            'data': result
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@app.route('/api/mcp/resources/read', methods=['POST'])
+def api_mcp_read_resource():
+    """读取MCP资源"""
+    try:
+        data = request.get_json()
+        client_name = data.get('client_name')
+        resource_uri = data.get('resource_uri')
+
+        if not all([client_name, resource_uri]):
+            return jsonify({
+                'success': False,
+                'error': '缺少必要参数: client_name, resource_uri'
+            })
+
+        system = get_agent_system()
+
+        # 异步执行
+        import asyncio
+        content = asyncio.run(system.mcp_manager.read_resource(client_name, resource_uri))
+
+        return jsonify({
+            'success': True,
+            'data': content
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

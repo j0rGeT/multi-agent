@@ -101,6 +101,11 @@
                                     <option value="quota_only">配额处理链</option>
                                     <option value="project_only">项目处理链</option>
                                 </select>
+                                <div class="mt-1">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="showChains()">
+                                        <i class="fas fa-cog"></i> 管理处理链
+                                    </button>
+                                </div>
                             </div>
                             <button type="submit" class="btn btn-primary" id="process-btn">
                                 <i class="fas fa-play"></i> 处理任务
@@ -140,8 +145,11 @@
 
                 <!-- 处理链状态 -->
                 <div class="card status-card chain-card mb-4">
-                    <div class="card-header">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5><i class="fas fa-link"></i> 处理链</h5>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="showChains()">
+                            <i class="fas fa-cog"></i> 管理
+                        </button>
                     </div>
                     <div class="card-body">
                         <div id="chains-list">
@@ -169,6 +177,12 @@
                             </button>
                             <button class="btn btn-outline-success" onclick="showTools()">
                                 <i class="fas fa-tools"></i> 工具管理
+                            </button>
+                            <button class="btn btn-outline-warning" onclick="showMCP()">
+                                <i class="fas fa-plug"></i> MCP管理
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="showChains()">
+                                <i class="fas fa-link"></i> 处理链管理
                             </button>
                         </div>
                     </div>
@@ -239,6 +253,123 @@
                                 <p class="text-muted text-center">选择工具进行执行</p>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MCP管理模态框 -->
+    <div class="modal fade" id="mcpModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plug"></i> MCP 管理
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs" id="mcpTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="mcp-clients-tab" data-bs-toggle="tab"
+                                    data-bs-target="#mcp-clients" type="button" role="tab">
+                                MCP客户端
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="mcp-tools-tab" data-bs-toggle="tab"
+                                    data-bs-target="#mcp-tools" type="button" role="tab">
+                                MCP工具
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="mcp-resources-tab" data-bs-toggle="tab"
+                                    data-bs-target="#mcp-resources" type="button" role="tab">
+                                MCP资源
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="mcp-execute-tab" data-bs-toggle="tab"
+                                    data-bs-target="#mcp-execute" type="button" role="tab">
+                                执行MCP工具
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content mt-3" id="mcpTabContent">
+                        <div class="tab-pane fade show active" id="mcp-clients" role="tabpanel">
+                            <div class="mb-3">
+                                <button class="btn btn-primary" onclick="showAddMCPClient()">
+                                    <i class="fas fa-plus"></i> 添加MCP客户端
+                                </button>
+                            </div>
+                            <div id="mcp-clients-content">
+                                <p class="text-muted text-center">加载中...</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="mcp-tools" role="tabpanel">
+                            <div id="mcp-tools-content">
+                                <p class="text-muted text-center">选择客户端查看工具</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="mcp-resources" role="tabpanel">
+                            <div id="mcp-resources-content">
+                                <p class="text-muted text-center">选择客户端查看资源</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="mcp-execute" role="tabpanel">
+                            <div id="mcp-execute-content">
+                                <p class="text-muted text-center">选择工具进行执行</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加MCP客户端模态框 -->
+    <div class="modal fade" id="addMCPClientModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">添加MCP客户端</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-mcp-client-form">
+                        <div class="mb-3">
+                            <label for="client-name" class="form-label">客户端名称</label>
+                            <input type="text" class="form-control" id="client-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="server-url" class="form-label">服务器地址</label>
+                            <input type="url" class="form-control" id="server-url"
+                                   placeholder="ws://localhost:3000" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="addMCPClient()">添加</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 处理链管理模态框 -->
+    <div class="modal fade" id="chainsModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-link"></i> 处理链管理
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="chains-management-content">
+                        <p class="text-muted text-center">加载中...</p>
                     </div>
                 </div>
             </div>
