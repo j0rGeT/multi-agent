@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通用多智能体系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .status-card {
+            transition: all 0.3s ease;
+        }
+        .status-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .agent-card {
+            border-left: 4px solid #007bff;
+        }
+        .chain-card {
+            border-left: 4px solid #28a745;
+        }
+        .monitor-card {
+            border-left: 4px solid #ffc107;
+        }
+        .processing {
+            background-color: #e9ecef;
+        }
+        .success {
+            background-color: #d4edda;
+        }
+        .error {
+            background-color: #f8d7da;
+        }
+        .loading {
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-robot"></i> 通用多智能体系统
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- 系统概览 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card status-card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-tachometer-alt"></i> 系统概览</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="system-overview">
+                            <div class="col-md-3 text-center">
+                                <h3 id="total-agents">-</h3>
+                                <p class="text-muted">智能体数量</p>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <h3 id="total-requests">-</h3>
+                                <p class="text-muted">总请求数</p>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <h3 id="success-rate">-</h3>
+                                <p class="text-muted">成功率</p>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <h3 id="uptime">-</h3>
+                                <p class="text-muted">运行时间</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 左侧：工单处理 -->
+            <div class="col-md-8">
+                <!-- 工单处理表单 -->
+                <div class="card status-card mb-4">
+                    <div class="card-header">
+                        <h4><i class="fas fa-tasks"></i> 任务处理</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="process-form">
+                            <div class="mb-3">
+                                <label for="ticket-content" class="form-label">任务内容</label>
+                                <textarea class="form-control" id="ticket-content" rows="4"
+                                          placeholder="请输入任务内容，例如：用户 user123 需要增加 CPU 配额 10 个" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="chain-select" class="form-label">处理方式</label>
+                                <select class="form-select" id="chain-select">
+                                    <option value="">自动路由（推荐）</option>
+                                    <option value="full_processing">完整处理链</option>
+                                    <option value="quota_only">配额处理链</option>
+                                    <option value="project_only">项目处理链</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="process-btn">
+                                <i class="fas fa-play"></i> 处理任务
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 处理结果 -->
+                <div class="card status-card" id="result-card" style="display: none;">
+                    <div class="card-header">
+                        <h4><i class="fas fa-chart-bar"></i> 处理结果</h4>
+                    </div>
+                    <div class="card-body" id="result-content">
+                        <!-- 结果内容将通过JavaScript动态填充 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：系统信息 -->
+            <div class="col-md-4">
+                <!-- 智能体状态 -->
+                <div class="card status-card agent-card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-robot"></i> 智能体状态</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="agents-list">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">加载中...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 处理链状态 -->
+                <div class="card status-card chain-card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-link"></i> 处理链</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="chains-list">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">加载中...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快速操作 -->
+                <div class="card status-card monitor-card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cogs"></i> 快速操作</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" onclick="refreshStatus()">
+                                <i class="fas fa-sync-alt"></i> 刷新状态
+                            </button>
+                            <button class="btn btn-outline-info" onclick="showMonitor()">
+                                <i class="fas fa-chart-line"></i> 查看监控
+                            </button>
+                            <button class="btn btn-outline-success" onclick="showTools()">
+                                <i class="fas fa-tools"></i> 工具管理
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 监控模态框 -->
+    <div class="modal fade" id="monitorModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">系统监控</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="monitor-content">
+                    <!-- 监控内容将通过JavaScript动态填充 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 工具管理模态框 -->
+    <div class="modal fade" id="toolsModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-tools"></i> 工具管理
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs" id="toolsTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="all-tools-tab" data-bs-toggle="tab"
+                                    data-bs-target="#all-tools" type="button" role="tab">
+                                所有工具
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="shared-tools-tab" data-bs-toggle="tab"
+                                    data-bs-target="#shared-tools" type="button" role="tab">
+                                共享工具
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="execute-tool-tab" data-bs-toggle="tab"
+                                    data-bs-target="#execute-tool" type="button" role="tab">
+                                执行工具
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content mt-3" id="toolsTabContent">
+                        <div class="tab-pane fade show active" id="all-tools" role="tabpanel">
+                            <div id="all-tools-content">
+                                <p class="text-muted text-center">加载中...</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="shared-tools" role="tabpanel">
+                            <div id="shared-tools-content">
+                                <p class="text-muted text-center">加载中...</p>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="execute-tool" role="tabpanel">
+                            <div id="execute-tool-content">
+                                <p class="text-muted text-center">选择工具进行执行</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

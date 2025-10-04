@@ -1,0 +1,27 @@
+agents:
+- class_path: agents.business_logic_agent.BusinessLogicAgent
+  description: 业务逻辑检查智能体
+  enabled: true
+  init_params: {}
+  name: business_logic_agent
+  priority: 5
+- class_path: agents.quota_agent.QuotaAgent
+  description: 配额管理智能体
+  enabled: true
+  init_params: {}
+  name: quota_agent
+  priority: 10
+- class_path: agents.project_agent.ProjectAgent
+  description: 项目管理智能体
+  enabled: true
+  init_params: {}
+  name: project_agent
+  priority: 10
+system:
+  log_level: INFO
+  max_retries: 3
+  openai_api_key: your_openai_api_key_here
+  project_api_url: https://api.example.com/projects
+  quota_api_url: https://api.example.com/quota
+  ticket_api_url: https://api.example.com/tickets
+  timeout: 30
